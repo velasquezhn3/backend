@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WhatsApp Bot Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      text-align: center;
+    }
+    #qrCode {
+      margin: 1rem auto;
+      width: 256px;
+      height: 256px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+    #status {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    #uploadSection {
+      margin-top: 2rem;
+      border-top: 1px solid #ccc;
+      padding-top: 1rem;
+    }
+    #uploadStatus {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chilo Bot Dashboard</h1>
+  <img id="qrCode" src="/qr" alt="QR Code" />
+  <div>
+    <button id="restartBtn">Clear and Start New Login</button>
+  </div>
+  <div id="status"></div>
+
+  <div id="uploadSection">
+    <h2>Upload Relationships File</h2>
+    <input type="file" id="fileInput" accept=".xlsx" />
+    <button id="uploadBtn">Upload</button>
+    <div id="uploadStatus"></div>
+  </div>
+
+  <div id="updateUrlSection" style="margin-top: 2rem; border-top: 1px solid #ccc; padding-top: 1rem;">
+    <h2>Update Student Information Link</h2>
+    <input type="text" id="urlInput" placeholder="Enter new Excel URL" style="width: 60%; padding: 0.5rem; font-size: 1rem;" />
+    <button id="updateUrlBtn">Update URL</button>
+    <div id="updateUrlStatus" style="margin-top: 1rem; font-weight: bold;"></div>
+  </div>
+
+  <script>
+    const restartBtn = document.getElementById('restartBtn');
+    const qrCodeImg = document.getElementById('qrCode');
+    const statusDiv = document.getElementById('status');
+
+    restartBtn.addEventListener('click', () => {
+      restartBtn.disabled = true;
+      statusDiv.textContent = 'Restarting bot, please wait...';
+
+      fetch('/restart', { method: 'POST' })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to restart bot');
+          }
+          return response.text();
+        })
+        .then(message => {
+          statusDiv.textContent = message;
+
+          // Wait 5 seconds before refreshing QR code image to allow file creation
+          setTimeout(() => {
+            qrCodeImg.src = '/qr?t=' + new Date().getTime();
+          }, 5000);
+        })
+        .catch(error => {
+          statusDiv.textContent = error.message;
+        })
+        .finally(() => {
+          restartBtn.disabled = false;
+        });
+    });
+
+    // Optionally refresh QR code every 30 seconds
+    setInterval(() => {
+      qrCodeImg.src = '/qr?t=' + new Date().getTime();
+    }, 30000);
+
+    // Upload relationships file logic
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadStatus = document.getElementById('uploadStatus');
+
+    uploadBtn.addEventListener('click', () => {
+      uploadStatus.textContent = '';
+      const file = fileInput.files[0];
+      if (!file) {
+        uploadStatus.textContent = 'Please select a file to upload.';
+        uploadStatus.style.color = 'red';
+        return;
+      }
+      if (!file.name.endsWith('.xlsx')) {
+        uploadStatus.textContent = 'Only .xlsx files are allowed.';
+        uploadStatus.style.color = 'red';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      uploadBtn.disabled = true;
+      uploadStatus.textContent = 'Uploading...';
+      uploadStatus.style.color = 'black';
+
+      fetch('/upload-relaciones', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          uploadStatus.textContent = data.message;
+          uploadStatus.style.color = 'green';
+          fileInput.value = '';
+        } else {
+          uploadStatus.textContent = data.message || 'Upload failed.';
+          uploadStatus.style.color = 'red';
+        }
+      })
+      .catch(() => {
+        uploadStatus.textContent = 'Upload failed due to network error.';
+        uploadStatus.style.color = 'red';
+      })
+      .finally(() => {
+        uploadBtn.disabled = false;
+      });
+    });
+
+    // Update Excel URL logic
+    const urlInput = document.getElementById('urlInput');
+    const updateUrlBtn = document.getElementById('updateUrlBtn');
+    const updateUrlStatus = document.getElementById('updateUrlStatus');
+
+    updateUrlBtn.addEventListener('click', () => {
+      updateUrlStatus.textContent = '';
+      const newUrl = urlInput.value.trim();
+      if (!newUrl) {
+        updateUrlStatus.textContent = 'Please enter a valid URL.';
+        updateUrlStatus.style.color = 'red';
+        return;
+      }
+
+      updateUrlBtn.disabled = true;
+      updateUrlStatus.textContent = 'Updating URL...';
+      updateUrlStatus.style.color = 'black';
+
+      fetch('/update-excel-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ newUrl })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          updateUrlStatus.textContent = data.message;
+          updateUrlStatus.style.color = 'green';
+          urlInput.value = '';
+        } else {
+          updateUrlStatus.textContent = data.message || 'Update failed.';
+          updateUrlStatus.style.color = 'red';
+        }
+      })
+      .catch(() => {
+        updateUrlStatus.textContent = 'Update failed due to network error.';
+        updateUrlStatus.style.color = 'red';
+      })
+      .finally(() => {
+        updateUrlBtn.disabled = false;
+      });
+    });
+  </script>
+</body>
+</html>
