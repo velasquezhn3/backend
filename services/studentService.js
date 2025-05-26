@@ -47,12 +47,12 @@ async function buscarEstudiante(id) {
     // Obtener el workbook cacheado desde el nuevo módulo
     const workbook = await getWorkbook();
 
-    // Obtener la hoja "Matricula 2025" (hoja número 5)
+    // Obtener la hoja "MATRICULA 2025" (hoja número 5)
     // Intentar obtener por nombre, si no existe, obtener por índice (5)
-    let hoja = workbook.getWorksheet('Matricula 2025');
+    let hoja = workbook.getWorksheet('MATRICULA 2025');
     if (!hoja) {
       hoja = workbook.worksheets[5]; // índice 5 = hoja número 6 (0-based)
-      console.log(`[${new Date().toISOString()}] Hoja "Matricula 2025" no encontrada por nombre, usando hoja número 6: ${hoja.name}`);
+      console.log(`[${new Date().toISOString()}] Hoja "MATRICULA 2025" no encontrada por nombre, usando hoja número 6: ${hoja.name}`);
     }
 
     let estudiante = null;

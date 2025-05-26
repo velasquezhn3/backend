@@ -526,6 +526,7 @@ if (estudiante) {
  * Inicia la conexión del bot WhatsApp.
  */
 let qrGenerated = false;
+let botInstance = null;
 
 async function iniciarBot() {
   try {
@@ -533,7 +534,7 @@ async function iniciarBot() {
 
     const { state, saveCreds } = await useMultiFileAuthState(path.join(dataDir, 'session'));
 
-    const bot = makeWASocket({
+    botInstance = makeWASocket({
       auth: state,
       printQRInTerminal: true,
       browser: ["Sistema Escolar", "Chrome", "122.0.6261.94"],
@@ -544,7 +545,7 @@ function resetQrFlag() {
   qrGenerated = false;
 }
 
-bot.ev.on('connection.update', (update) => {
+botInstance.ev.on('connection.update', (update) => {
   console.log('Connection update event:', JSON.stringify(update, null, 2));
   if (update.qr) {
     if (!qrGenerated) {
@@ -589,10 +590,16 @@ bot.ev.on('connection.update', (update) => {
   if (update.connection) {
     console.log('Connection update:', update.connection);
   }
-  if (update.lastDisconnect) {
+if (update.lastDisconnect) {
     console.log('Last disconnect info:', JSON.stringify(update.lastDisconnect, null, 2));
     const statusCode = update.lastDisconnect.error?.output?.statusCode || update.lastDisconnect.statusCode;
     console.log('Last disconnect status code:', statusCode);
+
+    if (statusCode === 440) {
+      console.log('Conflicto detectado: otra instancia está conectada con este número de WhatsApp. No se reiniciará el bot. Cierra todas las demás instancias para reanudar.');
+      return; // Evita reiniciar en caso de conflicto
+    }
+
 if (statusCode === 401) {
   console.log('Unauthorized, deleting session and restarting...');
   // Delete session files to force re-authentication
@@ -614,9 +621,9 @@ if (statusCode === 401) {
   }
 });
 
-    bot.ev.on('creds.update', saveCreds);
+    botInstance.ev.on('creds.update', saveCreds);
 
-    bot.ev.on('messages.upsert', async ({ messages }) => {
+    botInstance.ev.on('messages.upsert', async ({ messages }) => {
       const msg = messages[0];
       if (!msg.key.fromMe && msg.message) {
         const remitente = msg.key.remoteJid;
@@ -629,7 +636,7 @@ if (statusCode === 401) {
         }
 
         if (texto) {
-          await procesarMensaje(bot, remitente, texto, msg.message);
+          await procesarMensaje(botInstance, remitente, texto, msg.message);
         }
       }
     });
@@ -640,8 +647,30 @@ if (statusCode === 401) {
   }
 }
 
+async function logoutBot() {
+  if (botInstance) {
+    try {
+      await botInstance.logout();
+      console.log("Logout exitoso. Sesión cerrada en WhatsApp.");
+    } catch (e) {
+      console.error("Error durante logout:", e);
+    }
+  }
+
+  const sessionPath = path.join(dataDir, 'session');
+  fs.rm(sessionPath, { recursive: true, force: true }, (err) => {
+    if (err) {
+      console.error('Error deleting session files:', err);
+    } else {
+      console.log('Session files deleted successfully.');
+    }
+    setTimeout(iniciarBot, 3000);
+  });
+}
+
 module.exports = {
   iniciarBot,
+  logoutBot,
   procesarMensaje,
   enviarMenuPrincipal,
   enviarEstadoPagos

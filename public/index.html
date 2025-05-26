@@ -45,33 +45,75 @@
   </style>
 </head>
 <body>
-  <h1>Chilo Bot Dashboard</h1>
-  <img id="qrCode" src="/qr" alt="QR Code" />
-  <div>
-    <button id="restartBtn">Clear and Start New Login</button>
+  <div id="loginContainer" style="margin-top: 2rem; text-align: center;">
+    <h2>Login</h2>
+    <div>
+      <input type="text" id="username" placeholder="Username" style="padding: 0.5rem; font-size: 1rem; width: 200px;" />
+    </div>
+    <div style="margin-top: 1rem;">
+      <input type="password" id="password" placeholder="Password" style="padding: 0.5rem; font-size: 1rem; width: 200px;" />
+    </div>
+    <div style="margin-top: 1rem;">
+      <button id="loginBtn" style="padding: 0.5rem 1rem; font-size: 1rem;">Login</button>
+    </div>
+    <div id="loginMessage" style="margin-top: 1rem; font-weight: bold; color: red;"></div>
   </div>
-  <div id="status"></div>
 
-  <div id="uploadSection">
-    <h2>Upload Relationships File</h2>
-    <input type="file" id="fileInput" accept=".xlsx" />
-    <button id="uploadBtn">Upload</button>
-    <div id="uploadStatus"></div>
-  </div>
+  <div id="dashboardContent" style="display: none;">
+    <h1>Chilo Bot Dashboard</h1>
+    <img id="qrCode" src="/qr" alt="QR Code" />
+    <div>
+      <button id="restartBtn">Clear and Start New Login</button>
+    </div>
+    <div id="status"></div>
 
-  <div id="updateUrlSection" style="margin-top: 2rem; border-top: 1px solid #ccc; padding-top: 1rem;">
-    <h2>Update Student Information Link</h2>
-    <input type="text" id="urlInput" placeholder="Enter new Excel URL" style="width: 60%; padding: 0.5rem; font-size: 1rem;" />
-    <button id="updateUrlBtn">Update URL</button>
-    <div id="updateUrlStatus" style="margin-top: 1rem; font-weight: bold;"></div>
+    <div id="uploadSection">
+      <h2>Upload Relationships File</h2>
+      <input type="file" id="fileInput" accept=".xlsx" />
+      <button id="uploadBtn">Upload</button>
+      <div id="uploadStatus"></div>
+    </div>
+
+    <div id="updateUrlSection" style="margin-top: 2rem; border-top: 1px solid #ccc; padding-top: 1rem;">
+      <h2>Update Student Information Link</h2>
+      <input type="text" id="urlInput" placeholder="Enter new Excel URL" style="width: 60%; padding: 0.5rem; font-size: 1rem;" />
+      <button id="updateUrlBtn">Update URL</button>
+      <div id="updateUrlStatus" style="margin-top: 1rem; font-weight: bold;"></div>
+    </div>
   </div>
 
   <script>
+    // Login logic
+    const loginBtn = document.getElementById('loginBtn');
+    const loginMessage = document.getElementById('loginMessage');
+    const loginContainer = document.getElementById('loginContainer');
+    const dashboardContent = document.getElementById('dashboardContent');
+
+    loginBtn.addEventListener('click', () => {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (username === 'Admin' && password === 'JoseCecilio') {
+        loginMessage.style.color = 'green';
+        loginMessage.textContent = 'Welcome, Admin!';
+        loginContainer.style.display = 'none';
+        dashboardContent.style.display = 'block';
+      } else {
+        loginMessage.style.color = 'red';
+        loginMessage.textContent = 'Incorrect username or password.';
+      }
+    });
+
+    // Existing dashboard scripts below
     const restartBtn = document.getElementById('restartBtn');
     const qrCodeImg = document.getElementById('qrCode');
     const statusDiv = document.getElementById('status');
 
     restartBtn.addEventListener('click', () => {
+      const confirmed = confirm('¿Seguro que quiere borrar el login?');
+      if (!confirmed) {
+        return;
+      }
       restartBtn.disabled = true;
       statusDiv.textContent = 'Restarting bot, please wait...';
 
