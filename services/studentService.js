@@ -7,6 +7,37 @@ const { columnas } = require('../config/config');
 const { getWorkbook } = require('./studentExcelService');
 
 /**
+ * Sanitiza y convierte un valor de celda a número o null.
+ * @param {any} valor - Valor de la celda.
+ * @returns {number|null} Valor numérico o null si no es válido.
+ */
+function sanitizarValorMes(valor) {
+  if (valor === null || valor === undefined) return null;
+
+  if (typeof valor === 'number') return valor;
+
+  if (typeof valor === 'string') {
+    // Eliminar símbolos de moneda, espacios y comas
+    const limpio = valor.replace(/[^0-9.-]+/g, '');
+    const numero = parseFloat(limpio);
+    return isNaN(numero) ? null : numero;
+  }
+
+  if (typeof valor === 'object') {
+    if (valor.text) {
+      const limpio = valor.text.replace(/[^0-9.-]+/g, '');
+      const numero = parseFloat(limpio);
+      return isNaN(numero) ? null : numero;
+    }
+    if (valor.result) {
+      return typeof valor.result === 'number' ? valor.result : null;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Busca un estudiante por su ID en el archivo Excel.
  * @param {string} id - ID del estudiante.
  * @returns {Promise<Object|null>} Información del estudiante o null si no encontrado.
@@ -61,7 +92,7 @@ async function buscarEstudiante(id) {
           id,
           planDePago: row.getCell('H').value,  // Added planDePago from column H
           meses: Object.entries(columnas.MESES).reduce((acc, [mes, col]) => {
-            acc[mes.toLowerCase()] = row.getCell(col).value;
+            acc[mes.toLowerCase()] = sanitizarValorMes(row.getCell(col).value);
             return acc;
           }, {}),
           totalPagar,
