@@ -27,6 +27,8 @@ const {
 const { infoEscuela, dataDir } = require('../config/config');
 const { isAdmin } = require('../services/adminService');
 
+const { appendLog } = require('../utils/logger');
+
 /**
  * Envía el menú principal al usuario.
  * @param {Object} bot - Instancia del bot.
@@ -236,6 +238,14 @@ async function procesarMensaje(bot, remitente, mensaje, mensajeObj) {
   const estado = obtenerEstado(remitente);
   const alumnos = obtenerAlumnosEncargado(remitente);
   const textoMinuscula = mensaje.toLowerCase();
+
+  // Log message processing event
+  appendLog({
+    tipo: 'mensaje',
+    fecha: new Date().toISOString(),
+    usuario: remitente,
+    detalle: `Mensaje procesado: ${mensaje}`
+  });
 
   // Check if greeting was sent today
   const hoy = new Date().toISOString().slice(0, 10);
@@ -456,6 +466,14 @@ if (estudiante) {
         await registrarEncargado(remitente, estado.datos.idEstudiante);
         const estudiante = await buscarEstudiante(estado.datos.idEstudiante);
 
+        // Log registration event
+        appendLog({
+          tipo: 'registro',
+          fecha: new Date().toISOString(),
+          usuario: remitente,
+          detalle: `Alumno registrado: ${estado.datos.idEstudiante}`
+        });
+
         await enviarMensajeConDelay(bot, remitente, {
           text: `✅ *REGISTRO EXITOSO*\n\nEl alumno *${estudiante.nombre}* ha sido vinculado a su número.\n\nYa puede consultar su estado de pagos desde el menú principal.`
         });
@@ -502,15 +520,23 @@ if (estudiante) {
         const idAlumno = estado.datos.alumnos[indiceEliminar];
         const estudiante = await buscarEstudiante(idAlumno);
 
-        if (eliminarRelacion(remitente, idAlumno)) {
-          await enviarMensajeConDelay(bot, remitente, {
-            text: `✅ El alumno *${estudiante.nombre}* ha sido eliminado de su cuenta correctamente.`
-          });
-        } else {
-          await enviarMensajeConDelay(bot, remitente, {
-            text: '❌ Error al eliminar el alumno. Por favor contacte a administración.'
-          });
-        }
+      if (eliminarRelacion(remitente, idAlumno)) {
+        // Log deletion event
+        appendLog({
+          tipo: 'eliminacion',
+          fecha: new Date().toISOString(),
+          usuario: remitente,
+          detalle: `Alumno eliminado: ${idAlumno}`
+        });
+
+        await enviarMensajeConDelay(bot, remitente, {
+          text: `✅ El alumno *${estudiante.nombre}* ha sido eliminado de su cuenta correctamente.`
+        });
+      } else {
+        await enviarMensajeConDelay(bot, remitente, {
+          text: '❌ Error al eliminar el alumno. Por favor contacte a administración.'
+        });
+      }
 
         setTimeout(() => enviarMenuPrincipal(bot, remitente), 1500);
       }
@@ -527,6 +553,7 @@ if (estudiante) {
  */
 let qrGenerated = false;
 let botInstance = null;
+let isConnected = false; // Track connection state
 
 async function iniciarBot() {
   try {
@@ -589,6 +616,7 @@ botInstance.ev.on('connection.update', (update) => {
   }
   if (update.connection) {
     console.log('Connection update:', update.connection);
+    isConnected = update.connection === 'open';
   }
 if (update.lastDisconnect) {
     console.log('Last disconnect info:', JSON.stringify(update.lastDisconnect, null, 2));
@@ -617,6 +645,7 @@ if (statusCode === 401) {
   }
   if (update.connection === 'close') {
     console.log('Connection closed, restarting bot in 3 seconds...');
+    isConnected = false;
     setTimeout(iniciarBot, 3000);
   }
 });

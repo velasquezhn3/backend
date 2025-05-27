@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { iniciarBot } = require('./controllers/botController');
 const uploadController = require('./controllers/uploadController');
+const adminStatsRouter = require('./routes/adminStats');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -19,6 +20,7 @@ const qrPngPath = path.join(dataDir, 'qr_code.png');
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', uploadController);
+app.use('/admin/stats', adminStatsRouter);
 
 // Endpoint to get QR code image
 app.get('/qr', (req, res) => {
