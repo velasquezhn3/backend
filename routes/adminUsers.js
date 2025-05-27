@@ -11,4 +11,8 @@ router.get('/students', adminController.listStudents);
 // GET /admin/users/:id/history - get user/student action history
 router.get('/users/:id/history', adminController.getUserHistory);
 
+// GET /admin/students/:id/debt - get student debt details
+router.get('/students/:id/debt', adminController.getStudentDebt);
+
+
 module.exports = router;

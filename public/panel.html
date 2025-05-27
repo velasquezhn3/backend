@@ -183,7 +183,10 @@
         tr.innerHTML = '<td>' + student.id + '</td>' +
                        '<td>' + student.nombre + '</td>' +
                        '<td>' + student.grado + '</td>' +
-                       '<td><button onclick="showHistory(\'' + student.id + '\')">Ver historial</button></td>';
+                       '<td>' +
+                         '<button onclick="showHistory(\'' + student.id + '\')">Ver historial</button> ' +
+                         '<button onclick="showDebtModal(\'' + student.id + '\')">Ver saldos</button>' +
+                       '</td>';
         tbody.appendChild(tr);
       });
       renderStudentsPagination();
@@ -253,6 +256,85 @@
     // Initial fetch
     fetchUsers();
     fetchStudents();
+  </script>
+
+  <style>
+    #debtModal {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border: 1px solid #ccc;
+      padding: 20px;
+      max-width: 600px;
+      max-height: 70vh;
+      overflow-y: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+    #debtModal h2 {
+      margin-top: 0;
+    }
+    #debtModal button.close {
+      float: right;
+    }
+    #debtContent {
+      margin-top: 1rem;
+    }
+    #debtContent p {
+      margin: 0.5rem 0;
+    }
+  </style>
+
+  <div id="debtModal">
+    <button class="close" onclick="closeDebtModal()">Cerrar</button>
+    <h2>Deuda del Estudiante</h2>
+    <div id="debtContent">Cargando...</div>
+  </div>
+
+  <script>
+    async function showDebtModal(studentId) {
+      const modal = document.getElementById('debtModal');
+      const content = document.getElementById('debtContent');
+      content.innerHTML = 'Cargando...';
+      modal.style.display = 'block';
+
+      try {
+        const res = await fetch('/admin/students/' + encodeURIComponent(studentId) + '/debt');
+        if (!res.ok) {
+          content.innerHTML = '<p>Error al obtener la deuda del estudiante.</p>';
+          return;
+        }
+        const data = await res.json();
+        const { estudiante, deuda } = data;
+
+        let html = '';
+        html += `<p><strong>Nombre:</strong> ${estudiante.nombre}</p>`;
+        html += `<p><strong>Grado:</strong> ${estudiante.grado}</p>`;
+        html += `<p><strong>ID:</strong> ${estudiante.id}</p>`;
+        html += `<p><strong>Plan de Pago:</strong> ${estudiante.planDePago || 'N/A'}</p>`;
+        html += `<hr />`;
+        html += `<p><strong>Cuota Mensual:</strong> L. ${deuda.cuotaMensual}</p>`;
+        html += `<p><strong>Meses Pendientes:</strong> ${deuda.mesesPendientes.length > 0 ? deuda.mesesPendientes.join(', ') : 'Ninguno'}</p>`;
+        html += `<p><strong>Deuda Mensualidad:</strong> L. ${deuda.deudaMensualidad}</p>`;
+        html += `<p><strong>Deuda Mora:</strong> L. ${deuda.deudaMora}</p>`;
+        html += `<p><strong>Total Deuda:</strong> L. ${deuda.totalDeuda}</p>`;
+        html += `<p><strong>Estado:</strong> ${deuda.alDia ? 'Al día' : 'Deudor'}</p>`;
+
+        content.innerHTML = html;
+      } catch (error) {
+        content.innerHTML = '<p>Error al obtener la deuda del estudiante.</p>';
+      }
+    }
+
+    function closeDebtModal() {
+      const modal = document.getElementById('debtModal');
+      modal.style.display = 'none';
+      const content = document.getElementById('debtContent');
+      content.innerHTML = '';
+    }
   </script>
 </body>
 </html>

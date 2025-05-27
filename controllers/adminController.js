@@ -1,4 +1,6 @@
 const adminUserService = require('../services/adminUserService');
+const { buscarEstudiante, calcularDeuda } = require('../services/studentService');
+
 
 /**
  * List encargados (users) with optional filters.
@@ -42,8 +44,24 @@ async function getUserHistory(req, res) {
   }
 }
 
+async function getStudentDebt(req, res) {
+  try {
+    const id = req.params.id;
+    const estudiante = await buscarEstudiante(id);
+    if (!estudiante) {
+      return res.status(404).json({ error: 'Estudiante no encontrado' });
+    }
+    const deuda = calcularDeuda(estudiante);
+    res.json({ estudiante, deuda });
+  } catch (error) {
+    console.error('Error getting student debt:', error);
+    res.status(500).json({ error: 'Error getting student debt' });
+  }
+}
+
 module.exports = {
   listUsers,
   listStudents,
-  getUserHistory
+  getUserHistory,
+  getStudentDebt
 };
