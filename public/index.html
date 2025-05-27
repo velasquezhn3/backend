@@ -62,6 +62,7 @@
   <div id="dashboardSelector" style="display: none; margin-top: 1rem; text-align: center;">
     <button id="btnAdminPanel" style="margin-right: 1rem; padding: 0.5rem 1rem; font-size: 1rem;">Panel de Administración - Bot IJCV</button>
     <button id="btnChiloDashboard" style="padding: 0.5rem 1rem; font-size: 1rem;">Chilo Bot Dashboard</button>
+    <button id="btnUserStudentPanel" class="button" style="margin-left: 1rem;">Gestión Usuarios y Alumnos</button>
   </div>
 
   <div id="adminPanelDashboard" style="display: none; margin-top: 2rem;">
@@ -215,6 +216,12 @@
       btnChiloDashboard.addEventListener('click', () => {
         adminPanelDashboard.style.display = 'none';
         chiloBotDashboard.style.display = 'block';
+      });
+
+      const btnUserStudentPanel = document.getElementById('btnUserStudentPanel');
+      btnUserStudentPanel.addEventListener('click', (event) => {
+        event.preventDefault();
+        window.location.href = '/panel.html';
       });
 
       // Admin Panel Dashboard scripts
