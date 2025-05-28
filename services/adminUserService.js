@@ -94,12 +94,39 @@ async function getStudents(filters) {
     // estadoPago can be 'pagado' or 'deudor'
     const estadoPago = filters.estadoPago.toLowerCase();
     const filteredByPago = [];
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1; // 1-based month number
     for (const s of filtered) {
       try {
         const estudiante = await buscarEstudiante(s.id);
         if (!estudiante) continue;
         const deuda = calcularDeuda(estudiante);
-        const alDia = deuda.alDia;
+        let alDia = deuda.alDia;
+
+        // Treat students who only owe the current month as "pagados" in panel
+        const mesesPendientes = deuda.mesesPendientes.map(m => m.toLowerCase());
+        if (mesesPendientes.length === 1) {
+          // Map month names to numbers for comparison
+          const monthNameToNumber = {
+            enero: 1,
+            febrero: 2,
+            marzo: 3,
+            abril: 4,
+            mayo: 5,
+            junio: 6,
+            julio: 7,
+            agosto: 8,
+            septiembre: 9,
+            octubre: 10,
+            noviembre: 11,
+            diciembre: 12
+          };
+          const pendienteMonthNum = monthNameToNumber[mesesPendientes[0]];
+          if (pendienteMonthNum === currentMonth) {
+            alDia = true; // Treat as paid
+          }
+        }
+
         if ((estadoPago === 'pagado' && alDia) || (estadoPago === 'deudor' && !alDia)) {
           filteredByPago.push(s);
         }

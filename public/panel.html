@@ -65,6 +65,7 @@
         <option value="deudor">Deudor</option>
       </select>
       <button id="studentFilterBtn">Filtrar</button>
+      <button id="studentPrintBtn">Imprimir</button>
     </div>
     <table id="studentsTable">
       <thead>
@@ -222,6 +223,49 @@
       const estadoPago = document.getElementById('studentPaymentFilter').value;
       fetchStudents({ nombre, id, estadoPago });
     });
+
+    document.getElementById('studentPrintBtn').addEventListener('click', () => {
+      printStudentList();
+    });
+
+    function printStudentList() {
+      const estadoPago = document.getElementById('studentPaymentFilter').value;
+      const studentsTable = document.getElementById('studentsTable');
+      const studentsPerPage = 10;
+
+      // Use the global studentsPage variable for current page number
+      const currentPage = studentsPage;
+
+      // Clone the table to print only the current page rows
+      const cloneTable = studentsTable.cloneNode(true);
+      const tbody = cloneTable.querySelector('tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+
+      // Remove all rows first
+      tbody.innerHTML = '';
+
+      // Calculate start and end index for current page
+      const start = (currentPage - 1) * studentsPerPage;
+      const end = start + studentsPerPage;
+
+      // Append only rows for current page
+      rows.slice(start, end).forEach(row => {
+        tbody.appendChild(row.cloneNode(true));
+      });
+
+      // Create a new window for printing
+      const printWindow = window.open('', '', 'width=900,height=600');
+      printWindow.document.write('<html><head><title>Imprimir lista de estudiantes</title>');
+      printWindow.document.write('<style>table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 8px; text-align: left; } th { background: #f0f0f0; }</style>');
+      printWindow.document.write('</head><body>');
+      printWindow.document.write('<h1>Lista de estudiantes - ' + (estadoPago ? estadoPago.charAt(0).toUpperCase() + estadoPago.slice(1) : 'Todos') + '</h1>');
+      printWindow.document.write(cloneTable.outerHTML);
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
 
     // History modal
     const historyModal = document.getElementById('historyModal');
