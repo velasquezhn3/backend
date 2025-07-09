@@ -6,6 +6,9 @@ const router = express.Router();
 
 const logsFilePath = path.join(__dirname, '../data/logs.json');
 
+const financialService = require('../services/adminFinancialService');
+const { getFinancialSummary } = require('../services/adminFinancialService');
+
 function readLogs() {
   try {
     if (fs.existsSync(logsFilePath)) {
@@ -138,6 +141,16 @@ router.get('/messages', (req, res) => {
   res.json(counts);
 });
 
+router.get('/financial-summary', async (req, res) => {
+  try {
+    const summary = await getFinancialSummary();
+    res.json(summary);
+  } catch (error) {
+    console.error('Error fetching financial summary:', error);
+    res.status(500).json({ error: 'Error fetching financial summary' });
+  }
+});
+
 router.get('/users', (req, res) => {
   const period = parsePeriod(req);
   const logs = readLogs();
@@ -156,6 +169,16 @@ router.get('/messages/total', (req, res) => {
   const logs = readLogs();
   const totalMessages = logs.filter(log => log.tipo === 'mensaje').length;
   res.json({ total: totalMessages });
+});
+
+router.get('/financial-summary', async (req, res) => {
+  try {
+    const summary = await getFinancialSummary();
+    res.json(summary);
+  } catch (error) {
+    console.error('Error fetching financial summary:', error);
+    res.status(500).json({ error: 'Error fetching financial summary' });
+  }
 });
 
 module.exports = router;

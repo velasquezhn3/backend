@@ -104,6 +104,9 @@ async function buscarEstudiante(id) {
     return estudiante;
   } catch (error) {
     console.error('Error en buscarEstudiante:', error);
+    if (error.message.includes('No se pudo cargar el archivo Excel') || error.message.includes('corrupto')) {
+      throw new Error('Error al cargar el archivo Excel. Por favor, verifique que el archivo no esté corrupto y sea un archivo .xlsx válido.');
+    }
     throw error;
   }
 }

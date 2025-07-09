@@ -30,6 +30,7 @@
   <div class="tabs">
     <div class="tab active" data-tab="users">Encargados</div>
     <div class="tab" data-tab="students">Alumnos</div>
+    <div class="tab" data-tab="financialSummary">Resumen Financiero</div>
   </div>
   <div class="content" id="usersContent">
     <div>
@@ -80,12 +81,37 @@
     </table>
     <div class="pagination" id="studentsPagination"></div>
   </div>
+  <div class="content" id="financialSummaryContent" style="display:none; padding: 10px;">
+    <ul id="financialOptions" style="list-style: none; padding: 0;">
+      <li><button class="financial-option" data-option="resumenFinancieroGeneral">Resumen Financiero General</button></li>
+      <li><button class="financial-option" data-option="comparativoMensualIngresos">Comparativo Mensual de Ingresos</button></li>
+      <li><button class="financial-option" data-option="estadoPagos">Estado de Pagos (Pagado vs. Pendiente)</button></li>
+      <li><button class="financial-option" data-option="distribucionIngresosPorFuente">Distribución de Ingresos por Fuente</button></li>
+    </ul>
+    <div id="financialReport" style="margin-top: 20px; white-space: pre-wrap; background: #f9f9f9; padding: 10px; border: 1px solid #ccc;"></div>
+  </div>
 
   <div id="historyModal">
     <button class="close" onclick="closeHistoryModal()">Cerrar</button>
     <h2>Historial de acciones</h2>
     <div id="historyList"></div>
   </div>
+
+  <section id="financial-summary-section" style="margin: 20px; padding: 20px; border: 1px solid #ccc;">
+    <h2>Resumen Financiero Objetivo</h2>
+
+    <h3>1. Resumen Financiero General</h3>
+    <pre id="resumen-financiero-json" style="background: #f9f9f9; padding: 10px;"></pre>
+
+    <h3>2. Comparativo Mensual de Ingresos</h3>
+    <pre id="comparativo-mensual-json" style="background: #f9f9f9; padding: 10px;"></pre>
+
+    <h3>3. Estado de Pagos (Pagado vs. Pendiente)</h3>
+    <pre id="estado-pagos-json" style="background: #f9f9f9; padding: 10px;"></pre>
+
+    <h3>4. Distribución de Ingresos por Fuente</h3>
+    <pre id="distribucion-ingresos-json" style="background: #f9f9f9; padding: 10px;"></pre>
+  </section>
 
   <script>
     document.getElementById('btnBackToIndex').addEventListener('click', () => {
@@ -104,9 +130,15 @@
         if (tab.dataset.tab === 'users') {
           usersContent.style.display = '';
           studentsContent.style.display = 'none';
-        } else {
+          financialSummaryContent.style.display = 'none';
+        } else if (tab.dataset.tab === 'students') {
           usersContent.style.display = 'none';
           studentsContent.style.display = '';
+          financialSummaryContent.style.display = 'none';
+        } else if (tab.dataset.tab === 'financialSummary') {
+          usersContent.style.display = 'none';
+          studentsContent.style.display = 'none';
+          financialSummaryContent.style.display = '';
         }
       });
     });
@@ -297,9 +329,75 @@
       historyList.innerHTML = '';
     }
 
-    // Initial fetch
-    fetchUsers();
-    fetchStudents();
+  // Initial fetch
+  fetchUsers();
+  fetchStudents();
+
+  // Financial summary data cache
+  let financialSummaryData = null;
+
+    // Fetch financial summary data from backend
+    async function fetchFinancialSummary() {
+      if (financialSummaryData) {
+        console.log('Using cached financial summary data');
+        return financialSummaryData;
+      }
+      try {
+        console.log('Fetching financial summary data from backend...');
+        const res = await fetch('/admin/stats/financial-summary');
+        if (!res.ok) {
+          throw new Error('Error fetching financial summary: ' + res.status);
+        }
+        financialSummaryData = await res.json();
+        console.log('Financial summary data received:', financialSummaryData);
+        return financialSummaryData;
+      } catch (error) {
+        console.error('Error fetching financial summary:', error);
+        return null;
+      }
+    }
+
+    // Render financial report based on selected option
+    async function renderFinancialReport(option) {
+      console.log('Rendering financial report for option:', option);
+      const data = await fetchFinancialSummary();
+      const reportDiv = document.getElementById('financialReport');
+      if (!data) {
+        reportDiv.textContent = 'Error al cargar el resumen financiero.';
+        return;
+      }
+      let content = '';
+      switch (option) {
+        case 'resumenFinancieroGeneral':
+          content = JSON.stringify(data.resumenGeneral, null, 2);
+          break;
+        case 'comparativoMensualIngresos':
+          content = JSON.stringify(data.seriesTemporales, null, 2);
+          break;
+        case 'estadoPagos':
+          content = JSON.stringify({
+            matriculas: data.resumenGeneral.matriculas,
+            libros: data.resumenGeneral.libros,
+            transporte: data.resumenGeneral.transporte,
+            pendiente: data.resumenGeneral.matriculas.pendiente + data.resumenGeneral.libros.pendiente + data.resumenGeneral.transporte.pendiente,
+            pagado: data.resumenGeneral.matriculas.pagado + data.resumenGeneral.libros.pagado + data.resumenGeneral.transporte.pagado
+          }, null, 2);
+          break;
+        case 'distribucionIngresosPorFuente':
+          content = JSON.stringify(data.distribucion, null, 2);
+          break;
+        default:
+          content = 'Opción no válida.';
+      }
+      reportDiv.textContent = content;
+    }
+
+  // Add event listeners to financial option buttons
+  document.querySelectorAll('.financial-option').forEach(button => {
+    button.addEventListener('click', () => {
+      renderFinancialReport(button.dataset.option);
+    });
+  });
   </script>
 
   <style>
