@@ -61,7 +61,7 @@ async function getStudents(filters) {
     const workbook = await require('./studentExcelService').getWorkbook();
     let sheet = workbook.getWorksheet('MATRICULA 2025');
     if (!sheet) {
-      sheet = workbook.worksheets[5];
+      sheet = workbook.worksheets[0];
     }
     sheet.eachRow((row, rowNumber) => {
       if (rowNumber < 3) return; // skip header rows

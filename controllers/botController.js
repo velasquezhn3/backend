@@ -133,7 +133,7 @@ async function enviarBroadcast(bot, mensaje) {
     } catch (error) {
       console.error(`Error enviando mensaje a ${destinatario}:`, error);
     }
-    const delayMs = Math.floor(Math.random() * 15000) + 1000; // 1 to 15 seconds
+    const delayMs = Math.floor(Math.random() * 15000) + 5000; // 5 to 20 seconds
     await delay(delayMs);
   }
   return enviados;
@@ -223,7 +223,7 @@ async function delay(ms) {
 }
 
 async function enviarMensajeConDelay(bot, remitente, mensaje) {
-  const delayMs = Math.floor(Math.random() * 10000) + 1000; // 1 to 10 seconds
+  const delayMs = Math.floor(Math.random() * 15000) + 5000; // 5 to 20 seconds
   await delay(delayMs);
   await bot.sendMessage(remitente, mensaje);
 }
